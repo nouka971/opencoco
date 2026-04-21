@@ -6,6 +6,7 @@ export interface AppConfig {
   logLevel: "debug" | "info" | "warn" | "error";
   asset: string;
   marketWindowMinutes: number;
+  maxActiveSlots: number;
   minPrice: number;
   maxPrice: number;
   minOrderSize: number;
@@ -14,6 +15,10 @@ export interface AppConfig {
   maxReplacementsPerMinute: number;
   sumCheckThreshold: number;
   dryRun: boolean;
+  requireTwoSidedQuotes: boolean;
+  cancelAllOnBoot: boolean;
+  livePostOnly: boolean;
+  polySignatureType: 0 | 1 | 2;
   runtimeDir: string;
   heartbeatFile: string;
   clobUrl: string;
@@ -46,6 +51,16 @@ function readString(name: string, fallback = ""): string {
   return process.env[name]?.trim() || fallback;
 }
 
+function readEnumNumber<T extends number>(name: string, allowed: T[], fallback: T): T {
+  const raw = process.env[name];
+  if (!raw) return fallback;
+  const parsed = Number(raw);
+  if (!allowed.includes(parsed as T)) {
+    throw new Error(`${name} must be one of: ${allowed.join(", ")}`);
+  }
+  return parsed as T;
+}
+
 export function loadConfig(): AppConfig {
   const minPrice = readNumber("OPENCOCO_MIN_PRICE", 0.1);
   const maxPrice = readNumber("OPENCOCO_MAX_PRICE", 0.9);
@@ -62,10 +77,11 @@ export function loadConfig(): AppConfig {
   }
 
   const config: AppConfig = {
-    env: readString("NODE_ENV", "development") as AppConfig["env"],
-    logLevel: readString("LOG_LEVEL", "info") as AppConfig["logLevel"],
+    env: (readString("NODE_ENV", "development") as AppConfig["env"]),
+    logLevel: (readString("LOG_LEVEL", "info") as AppConfig["logLevel"]),
     asset: readString("OPENCOCO_ASSET", "BTC"),
     marketWindowMinutes: readNumber("OPENCOCO_MARKET_WINDOW_MINUTES", 15),
+    maxActiveSlots: readNumber("OPENCOCO_MAX_ACTIVE_SLOTS", 1),
     minPrice,
     maxPrice,
     minOrderSize: readNumber("OPENCOCO_MIN_ORDER_SIZE", 5),
@@ -74,6 +90,10 @@ export function loadConfig(): AppConfig {
     maxReplacementsPerMinute: readNumber("OPENCOCO_MAX_REPLACEMENTS_PER_MINUTE", 24),
     sumCheckThreshold,
     dryRun,
+    requireTwoSidedQuotes: readBoolean("OPENCOCO_REQUIRE_TWO_SIDED_QUOTES", true),
+    cancelAllOnBoot: readBoolean("OPENCOCO_CANCEL_ALL_ON_BOOT", true),
+    livePostOnly: readBoolean("OPENCOCO_LIVE_POST_ONLY", true),
+    polySignatureType: readEnumNumber("POLY_SIGNATURE_TYPE", [0, 1, 2], 2),
     runtimeDir,
     heartbeatFile: path.resolve(readString("OPENCOCO_HEARTBEAT_FILE", "./runtime/bot-status.json")),
     clobUrl: readString("POLY_CLOB_URL", "https://clob.polymarket.com"),
@@ -88,6 +108,10 @@ export function loadConfig(): AppConfig {
 
   if (config.marketWindowMinutes !== 15) {
     throw new Error("V1 only supports 15-minute markets");
+  }
+
+  if (config.maxActiveSlots < 1) {
+    throw new Error("OPENCOCO_MAX_ACTIVE_SLOTS must be >= 1");
   }
 
   if (!config.dryRun) {
