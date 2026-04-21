@@ -33,6 +33,7 @@ export class RiskEngine {
     if (opposingBid != null && intent.price + opposingBid > this.config.sumCheckThreshold) {
       return {
         asset: intent.asset,
+        tokenId: intent.tokenId,
         slotStart: intent.slotStart,
         side: intent.side,
         action: "BLOCK",
@@ -44,6 +45,7 @@ export class RiskEngine {
     if (exposure.totalUsd + nextCost > this.config.maxSlotExposureUsd) {
       return {
         asset: intent.asset,
+        tokenId: intent.tokenId,
         slotStart: intent.slotStart,
         side: intent.side,
         action: "BLOCK",
@@ -55,6 +57,7 @@ export class RiskEngine {
     if (currentSideExposure + nextCost > this.config.maxSideExposureUsd) {
       return {
         asset: intent.asset,
+        tokenId: intent.tokenId,
         slotStart: intent.slotStart,
         side: intent.side,
         action: "BLOCK",
@@ -73,6 +76,7 @@ export class RiskEngine {
     if (!existing) {
       return {
         asset: intent.asset,
+        tokenId: intent.tokenId,
         slotStart: intent.slotStart,
         side: intent.side,
         action: "PLACE",
@@ -86,6 +90,7 @@ export class RiskEngine {
     if (Math.abs(existing.price - intent.price) < 0.009) {
       return {
         asset: intent.asset,
+        tokenId: intent.tokenId,
         slotStart: intent.slotStart,
         side: intent.side,
         action: "KEEP",
@@ -96,6 +101,7 @@ export class RiskEngine {
 
     return {
       asset: intent.asset,
+      tokenId: intent.tokenId,
       slotStart: intent.slotStart,
       side: intent.side,
       action: "REPLACE",
