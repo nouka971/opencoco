@@ -111,20 +111,18 @@ export class OpenCocoBot {
     }
 
     const blockedDecisions = decisions.map((decision) => {
-      if (decision.action === "KEEP" || decision.action === "PLACE" || decision.action === "REPLACE") {
-        const existingOrder = openOrders.find((order) => order.side === decision.side);
-        if (existingOrder) {
-          return {
-            asset: existingOrder.asset,
-            tokenId: existingOrder.tokenId,
-            slotStart: existingOrder.slotStart,
-            side: existingOrder.side,
-            action: "CANCEL" as const,
-            existingOrderId: existingOrder.orderId,
-            reason: "two-sided-pair-required",
-            createdAt: new Date().toISOString()
-          };
-        }
+      const existingOrder = openOrders.find((order) => order.side === decision.side);
+      if (existingOrder) {
+        return {
+          asset: existingOrder.asset,
+          tokenId: existingOrder.tokenId,
+          slotStart: existingOrder.slotStart,
+          side: existingOrder.side,
+          action: "CANCEL" as const,
+          existingOrderId: existingOrder.orderId,
+          reason: "two-sided-pair-required",
+          createdAt: new Date().toISOString()
+        };
       }
 
       return {
