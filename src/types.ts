@@ -8,6 +8,7 @@ export interface MarketSnapshot {
   conditionId: string;
   tokenIdYes: string;
   tokenIdNo: string;
+  negRisk: boolean;
   slotEpoch: number;
   slotStart: string;
   slotEnd: string;
@@ -21,15 +22,19 @@ export interface MarketSnapshot {
 
 export interface QuoteIntent {
   asset: string;
+  tokenId: string;
   slotStart: string;
   side: Side;
   price: number;
   size: number;
   reason: string;
+  tickSize: number;
+  negRisk: boolean;
 }
 
 export interface QuoteDecision {
   asset: string;
+  tokenId?: string;
   slotStart: string;
   side: Side;
   action: DecisionAction;
@@ -43,6 +48,7 @@ export interface QuoteDecision {
 export interface ActiveOrder {
   orderId: string;
   asset: string;
+  tokenId: string;
   slotStart: string;
   side: Side;
   price: number;
