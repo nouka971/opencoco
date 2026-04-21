@@ -44,9 +44,9 @@ export class OpenCocoBot {
 
   async start(): Promise<void> {
     this.store.ensureRuntimeDir();
-    await this.marketData.start();
+    this.snapshots = await this.discovery.discover();
+    await this.marketData.start(this.snapshots);
     this.orders = this.execution.hydrate(this.orders);
-    this.snapshots = this.discovery.discover();
     this.logger.info("bot started", {
       asset: this.config.asset,
       mode: this.config.dryRun ? "dry-run" : "live",
@@ -56,8 +56,9 @@ export class OpenCocoBot {
 
   async runCycle(): Promise<void> {
     try {
-      const nextSnapshots = this.snapshots.map((snapshot) => this.marketData.refresh(snapshot));
-      this.snapshots = nextSnapshots;
+      const discoveredSnapshots = await this.discovery.discover();
+      this.marketData.setSnapshots(discoveredSnapshots);
+      this.snapshots = this.marketData.currentSnapshots();
 
       for (const market of this.snapshots) {
         const intents = this.strategy.buildIntents(market);
