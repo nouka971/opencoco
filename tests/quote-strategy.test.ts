@@ -16,6 +16,7 @@ describe("QuoteStrategy", () => {
       conditionId: "c1",
       tokenIdYes: "yes",
       tokenIdNo: "no",
+      slotEpoch: 1713700800,
       slotStart: "2026-04-21T12:00:00.000Z",
       slotEnd: "2026-04-21T12:15:00.000Z",
       bestBidYes: 0.48,
