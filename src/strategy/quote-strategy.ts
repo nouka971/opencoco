@@ -24,11 +24,14 @@ export class QuoteStrategy {
 
       return {
         asset: market.asset,
+        tokenId: side === "YES" ? market.tokenIdYes : market.tokenIdNo,
         slotStart: market.slotStart,
         side,
         price,
         size: this.config.minOrderSize,
-        reason: opposingBid == null ? reason : `${reason}-sum-check-ready`
+        reason: opposingBid == null ? reason : `${reason}-sum-check-ready`,
+        tickSize: market.tickSize,
+        negRisk: market.negRisk
       };
     });
   }
