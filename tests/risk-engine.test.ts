@@ -13,11 +13,14 @@ describe("RiskEngine", () => {
     const engine = new RiskEngine(config as never);
     const intent: QuoteIntent = {
       asset: "BTC",
+      tokenId: "yes",
       slotStart: "2026-04-21T12:00:00.000Z",
       side: "YES",
       price: 0.5,
       size: 5,
-      reason: "test"
+      reason: "test",
+      tickSize: 0.01,
+      negRisk: false
     };
 
     const decision = engine.evaluate(intent, [], 0.49);
@@ -31,6 +34,7 @@ describe("RiskEngine", () => {
       {
         orderId: "1",
         asset: "BTC",
+        tokenId: "yes",
         slotStart: "2026-04-21T12:00:00.000Z",
         side: "YES",
         price: 0.9,
@@ -43,11 +47,14 @@ describe("RiskEngine", () => {
 
     const intent: QuoteIntent = {
       asset: "BTC",
+      tokenId: "no",
       slotStart: "2026-04-21T12:00:00.000Z",
       side: "NO",
       price: 0.5,
       size: 25,
-      reason: "test"
+      reason: "test",
+      tickSize: 0.01,
+      negRisk: false
     };
 
     const decision = engine.evaluate(intent, orders, 0.2);
