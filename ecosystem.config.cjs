@@ -3,7 +3,7 @@ module.exports = {
     {
       name: "opencoco",
       cwd: "/opt/opencoco/current",
-      script: "dist/index.js",
+      script: "dist/src/index.js",
       interpreter: "node",
       instances: 1,
       autorestart: true,
