@@ -5,6 +5,10 @@ function roundToTick(price: number, tickSize: number): number {
   return Math.round(price / tickSize) * tickSize;
 }
 
+function floorToTick(price: number, tickSize: number): number {
+  return Math.floor(price / tickSize) * tickSize;
+}
+
 export class QuoteStrategy {
   constructor(private readonly config: AppConfig) {}
 
@@ -13,14 +17,23 @@ export class QuoteStrategy {
       const bestBid = side === "YES" ? market.bestBidYes : market.bestBidNo;
       const opposingBid = side === "YES" ? market.bestBidNo : market.bestBidYes;
 
-      const rawPrice = bestBid == null
+      const seededPrice = bestBid == null
         ? 0.45
         : roundToTick(Math.min(bestBid + market.tickSize, this.config.maxPrice), market.tickSize);
 
-      const price = Math.max(this.config.minPrice, Math.min(this.config.maxPrice, rawPrice));
+      const cappedBySum = opposingBid == null
+        ? seededPrice
+        : floorToTick(
+            Math.min(seededPrice, this.config.sumCheckThreshold - opposingBid),
+            market.tickSize
+          );
+
+      const price = Math.max(this.config.minPrice, Math.min(this.config.maxPrice, cappedBySum));
       const reason = bestBid == null
         ? "preseed-when-book-empty"
-        : `penny-ahead-${side.toLowerCase()}`;
+        : opposingBid == null
+          ? `penny-ahead-${side.toLowerCase()}`
+          : `penny-ahead-${side.toLowerCase()}-sum-capped`;
 
       return {
         asset: market.asset,
