@@ -8,6 +8,7 @@ export interface MarketSnapshot {
   conditionId: string;
   tokenIdYes: string;
   tokenIdNo: string;
+  slotEpoch: number;
   slotStart: string;
   slotEnd: string;
   bestBidYes: number | null;
