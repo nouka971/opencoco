@@ -15,7 +15,7 @@
     "check": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@polymarket/clob-client": "^7.3.0",
+    "@polymarket/clob-client": "^5.8.1",
     "dotenv": "^17.0.1",
     "ethers": "^5.8.0",
     "ws": "^8.18.0"
