@@ -21,7 +21,7 @@ mkdir -p "$RELEASE_DIR"
 git archive main | tar -x -C "$RELEASE_DIR"
 
 cd "$RELEASE_DIR"
-npm ci
+npm install
 npm run build
 
 ln -sfn "$RELEASE_DIR" "$APP_ROOT/current"
