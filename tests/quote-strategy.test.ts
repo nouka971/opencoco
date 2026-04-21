@@ -16,6 +16,7 @@ describe("QuoteStrategy", () => {
       conditionId: "c1",
       tokenIdYes: "yes",
       tokenIdNo: "no",
+      negRisk: false,
       slotEpoch: 1713700800,
       slotStart: "2026-04-21T12:00:00.000Z",
       slotEnd: "2026-04-21T12:15:00.000Z",
@@ -30,5 +31,7 @@ describe("QuoteStrategy", () => {
     const intents = strategy.buildIntents(market);
     expect(intents[0]?.price).toBe(0.49);
     expect(intents[1]?.price).toBe(0.48);
+    expect(intents[0]?.tokenId).toBe("yes");
+    expect(intents[1]?.tokenId).toBe("no");
   });
 });
