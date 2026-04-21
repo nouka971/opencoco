@@ -7,7 +7,7 @@ import { Reconciler } from "../reconciliation/reconciler.js";
 import { RiskEngine } from "../risk/risk-engine.js";
 import { JsonlStore } from "../storage/jsonl-store.js";
 import { QuoteStrategy } from "../strategy/quote-strategy.js";
-import type { ActiveOrder, FillRecord, HealthStatus, MarketSnapshot } from "../types.js";
+import type { ActiveOrder, FillRecord, HealthStatus, MarketSnapshot, QuoteDecision } from "../types.js";
 import { HealthReporter } from "../health.js";
 
 export class OpenCocoBot {
@@ -46,7 +46,8 @@ export class OpenCocoBot {
     this.store.ensureRuntimeDir();
     this.snapshots = await this.discovery.discover();
     await this.marketData.start(this.snapshots);
-    this.orders = this.execution.hydrate(this.orders);
+    await this.execution.cancelAll();
+    this.orders = await this.execution.hydrate(this.snapshots);
     this.logger.info("bot started", {
       asset: this.config.asset,
       mode: this.config.dryRun ? "dry-run" : "live",
@@ -58,14 +59,20 @@ export class OpenCocoBot {
     try {
       const discoveredSnapshots = await this.discovery.discover();
       this.marketData.setSnapshots(discoveredSnapshots);
-      this.snapshots = this.marketData.currentSnapshots();
+      this.snapshots = this.marketData
+        .currentSnapshots()
+        .slice(0, this.config.maxActiveSlots);
+      this.orders = await this.execution.cancelStaleOrders(this.orders, this.snapshots);
 
       for (const market of this.snapshots) {
         const intents = this.strategy.buildIntents(market);
-        for (const intent of intents) {
+        const decisions = intents.map((intent) => {
           const opposingBid = intent.side === "YES" ? market.bestBidNo : market.bestBidYes;
-          const decision = this.risk.evaluate(intent, this.orders, opposingBid);
-          this.orders = this.execution.execute(decision, this.orders);
+          return this.risk.evaluate(intent, this.orders, opposingBid);
+        });
+
+        for (const decision of this.enforcePairedQuoting(market.slotStart, decisions)) {
+          this.orders = await this.execution.execute(decision, this.orders);
         }
       }
 
@@ -81,9 +88,55 @@ export class OpenCocoBot {
   }
 
   async reconcile(): Promise<void> {
+    this.orders = await this.execution.reconcileOpenOrders(this.orders, this.snapshots);
     this.reconciler.reconcile(this.orders, this.fills);
     this.lastReconcileAt = new Date().toISOString();
     this.writeHealth();
+  }
+
+  private enforcePairedQuoting(slotStart: string, decisions: QuoteDecision[]): QuoteDecision[] {
+    if (!this.config.requireTwoSidedQuotes) {
+      return decisions;
+    }
+
+    const openOrders = this.orders.filter(
+      (order) => order.slotStart === slotStart && order.status === "OPEN"
+    );
+    const canQuoteBothSides = decisions.every((decision) =>
+      decision.action === "PLACE" || decision.action === "REPLACE" || decision.action === "KEEP"
+    );
+
+    if (canQuoteBothSides) {
+      return decisions;
+    }
+
+    const blockedDecisions = decisions.map((decision) => {
+      if (decision.action === "KEEP" || decision.action === "PLACE" || decision.action === "REPLACE") {
+        const existingOrder = openOrders.find((order) => order.side === decision.side);
+        if (existingOrder) {
+          return {
+            asset: existingOrder.asset,
+            tokenId: existingOrder.tokenId,
+            slotStart: existingOrder.slotStart,
+            side: existingOrder.side,
+            action: "CANCEL" as const,
+            existingOrderId: existingOrder.orderId,
+            reason: "two-sided-pair-required",
+            createdAt: new Date().toISOString()
+          };
+        }
+      }
+
+      return {
+        ...decision,
+        action: "BLOCK" as const,
+        reason: decision.reason === "two-sided-pair-required"
+          ? decision.reason
+          : `two-sided-pair-required:${decision.reason}`
+      };
+    });
+
+    return blockedDecisions;
   }
 
   private writeHealth(): void {
