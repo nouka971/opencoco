@@ -35,7 +35,7 @@ export class ExecutionClient {
     }
 
     return remoteOrders
-      .map((order) => {
+      .map((order): ActiveOrder | null => {
         const tokenInfo = knownByToken.get(order.asset_id);
         if (!tokenInfo) {
           return null;
@@ -52,7 +52,7 @@ export class ExecutionClient {
           side: tokenInfo.side,
           price: Number(order.price),
           size: Number.isFinite(remainingSize) ? Math.max(remainingSize, 0) : Number(order.original_size),
-          status: "OPEN" as const,
+          status: "OPEN",
           createdAt: new Date(order.created_at).toISOString(),
           updatedAt: new Date().toISOString()
         };
