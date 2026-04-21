@@ -25,6 +25,8 @@ export class MarketDiscovery {
         clobTokenIds?: string | string[];
         minimum_tick_size?: string | number;
         tick_size?: string | number;
+        negRisk?: boolean;
+        neg_risk?: boolean;
       } | undefined;
 
       if (!record?.conditionId || !record.clobTokenIds) {
@@ -52,6 +54,7 @@ export class MarketDiscovery {
         conditionId: String(record.conditionId),
         tokenIdYes: tokenIds[0],
         tokenIdNo: tokenIds[1],
+        negRisk: Boolean(record.negRisk ?? record.neg_risk ?? false),
         slotEpoch,
         slotStart: new Date(slotEpoch * 1000).toISOString(),
         slotEnd: new Date((slotEpoch + 900) * 1000).toISOString(),
